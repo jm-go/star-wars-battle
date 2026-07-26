@@ -12,13 +12,3 @@ export type CategoryKey =
   | "cost_in_credits"
   | "passengers"
   | "films";
-
-export interface GameState {
-  userCard: Starship | null;
-  computerCard: Starship | null;
-  userScore: number;
-  computerScore: number;
-  message: string;
-  selectedCategory: CategoryKey | null;
-  isLoading: boolean;
-}
