@@ -1,12 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { Starship, CategoryKey } from "../types/starship";
-import {
-  initializeStarshipsDeck,
-  getNextStarship,
-  resetDeck,
-  getNumericValue,
-} from "../services/swapi";
-import { GAME_MESSAGES, MessageKey, GameMessage } from "../constants/messages";
+import { useCallback, useEffect, useState } from "react";
+import { GAME_MESSAGES, MessageKey } from "../constants/messages";
+import { CategoryKey, Starship } from "../types/starship";
+import { getNumericValue } from "../utils/getNumericValue";
+import { useStarshipDeck } from "./useStarshipDeck";
 
 const TIMINGS = {
   RESULT_DISPLAY: 1200,
@@ -19,114 +15,112 @@ export function useStarWarsGame() {
   const [userScore, setUserScore] = useState(0);
   const [computerScore, setComputerScore] = useState(0);
   const [messageKey, setMessageKey] = useState<MessageKey | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(
-    null
-  );
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const initGame = useCallback(async () => {
+  const { initializeDeck, resetDeck, drawCards } = useStarshipDeck();
+
+  const loadNextRound = useCallback(() => {
+    const cards = drawCards(2);
+
+    if (!cards) {
+      setSelectedCategory(null);
+      setMessageKey("GAME_OVER");
+      return;
+    }
+
+    const [nextUserCard, nextComputerCard] = cards;
+
+    setUserCard(nextUserCard);
+    setComputerCard(nextComputerCard);
+  }, [drawCards]);
+
+  const resetGameValues = useCallback(() => {
+    setUserScore(0);
+    setComputerScore(0);
+    setSelectedCategory(null);
+    setMessageKey(null);
+    setError(null);
+  }, []);
+
+  const handleStart = useCallback(async () => {
     setIsLoading(true);
+    setGameStarted(true);
+
     try {
-      await initializeStarshipsDeck();
-      setUserCard(getNextStarship());
-      setComputerCard(getNextStarship());
-      setError(null);
+      await initializeDeck();
+      resetGameValues();
+      loadNextRound();
     } catch (error) {
       console.error("Error initializing game:", error);
       setError("Error loading game. Please refresh the page.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initializeDeck, loadNextRound, resetGameValues]);
 
-  const loadNewCard = useCallback((player: "user" | "computer") => {
-    const starship = getNextStarship();
+  const handleReset = useCallback(() => {
+    resetDeck();
+    resetGameValues();
+    setGameStarted(true);
+    loadNextRound();
+  }, [loadNextRound, resetDeck, resetGameValues]);
 
-    if (!starship) {
-      setMessageKey("GAME_OVER");
+  useEffect(() => {
+    if (!userCard || !computerCard || !selectedCategory) {
       return;
     }
-
-    if (player === "user") {
-      setUserCard(starship);
-    } else {
-      setComputerCard(starship);
-    }
-  }, []);
-
-  const resetGameState = useCallback(() => {
-    setUserCard(getNextStarship());
-    setComputerCard(getNextStarship());
-    setUserScore(0);
-    setComputerScore(0);
-    setMessageKey(null);
-    setSelectedCategory(null);
-    setGameStarted(false);
-    setError(null);
-  }, []);
-
-  // Compare cards when category is selected
-  useEffect(() => {
-    if (!userCard || !computerCard || !selectedCategory) return;
 
     const userValue = getNumericValue(userCard, selectedCategory);
     const computerValue = getNumericValue(computerCard, selectedCategory);
 
     if (userValue > computerValue) {
-      setUserScore((prev) => prev + 1);
+      setUserScore((previousScore) => previousScore + 1);
       setMessageKey("WIN");
     } else if (userValue < computerValue) {
-      setComputerScore((prev) => prev + 1);
+      setComputerScore((previousScore) => previousScore + 1);
       setMessageKey("LOSE");
     } else {
       setMessageKey("DRAW");
     }
 
-    const timer1 = setTimeout(() => setMessageKey("GET_READY"), TIMINGS.RESULT_DISPLAY);
-    const timer2 = setTimeout(() => {
+    const resultTimer = window.setTimeout(() => {
+      setMessageKey("GET_READY");
+    }, TIMINGS.RESULT_DISPLAY);
+
+    const nextRoundTimer = window.setTimeout(() => {
       setSelectedCategory(null);
       setMessageKey(null);
-      loadNewCard("user");
-      loadNewCard("computer");
+      loadNextRound();
     }, TIMINGS.ROUND_TRANSITION);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      window.clearTimeout(resultTimer);
+      window.clearTimeout(nextRoundTimer);
     };
-  }, [userCard, computerCard, selectedCategory, loadNewCard]);
+  }, [computerCard, loadNextRound, selectedCategory, userCard]);
 
-  const handleCategoryClick = useCallback((category: CategoryKey) => {
-    if (isLoading || !userCard || !computerCard || selectedCategory) return;
+  const handleCategoryClick = useCallback(
+    (category: CategoryKey) => {
+      if (
+        isLoading ||
+        !userCard ||
+        !computerCard ||
+        selectedCategory !== null
+      ) {
+        return;
+      }
 
-    setSelectedCategory(category);
-    setMessageKey(null);
-  }, [isLoading, userCard, computerCard, selectedCategory]);
+      setSelectedCategory(category);
+      setMessageKey(null);
+    },
+    [computerCard, isLoading, selectedCategory, userCard]
+  );
 
-  const handleStart = useCallback(async () => {
-    setGameStarted(true);
-    await initGame();
-  }, [initGame]);
-
-  const handleReset = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await resetDeck();
-      resetGameState();
-    } catch (error) {
-      console.error("Error resetting game:", error);
-      setError("Error resetting game. Please refresh the page.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [resetGameState]);
-
-  const currentMessage: GameMessage | null = messageKey
-    ? GAME_MESSAGES[messageKey]
-    : null;
-
+  const currentMessage = messageKey ? GAME_MESSAGES[messageKey] : null;
   const gameOver = messageKey === "GAME_OVER";
 
   return {
