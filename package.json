@@ -1,0 +1,28 @@
+{
+  "name": "connectr-frontend-tech-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "normalize.css": "^8.0.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-spinners": "^0.17.0",
+    "styled-components": "^6.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "sass": "^1.96.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7"
+  }
+}
