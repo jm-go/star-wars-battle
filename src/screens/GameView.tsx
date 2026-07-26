@@ -8,11 +8,7 @@ import ScoreDisplay from "../components/ScoreDisplay";
 import PlayerCard from "../components/PlayerCard";
 import GameOverScreen from "./GameOverScreen";
 import { Starship, CategoryKey } from "../types/starship";
-
-interface GameMessage {
-  text: string;
-  type: "win" | "lose" | "draw" | "info" | "";
-}
+import type { GameMessage } from "../constants/messages";
 
 interface GameViewProps {
   userCard: Starship | null;
