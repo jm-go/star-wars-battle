@@ -1,6 +1,24 @@
 # Starship Battle
 
-draft description
+Starship Battle is a simple card-based game where the player competes against the computer using Star Wars starships.
+
+In each round, the player chooses a category to compare, while the opponent's values remain hidden until the selection is made. The starship with the higher value wins the round and earns a point. The game continues until the deck is exhausted.
+
+Live demo [here](https://jm-go.github.io/star-wars-battle/).
+
+# Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the application locally:
+
+```bash
+npm start
+```
 
 ## Approach
 
